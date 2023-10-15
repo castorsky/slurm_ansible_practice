@@ -1,0 +1,27 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: vagrant
+  provider:
+    name: virtualbox
+platforms:
+  - name: centos-instance
+    box: bento/centos-7.9
+    cpus: 2
+    memory: 2048
+    instance_raw_config_args:
+      - 'vm.network "private_network", ip: "172.17.17.31"'
+      - 'vbguest.auto_update = false'
+scenario:
+  name: default
+  # For testing purposes 'create' step omitted because Vagrant is kinda slow
+  # and multiple launches deliver so much pain.
+  converge_sequence:
+    - prepare
+    - converge
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      vault_identity_list: "slurm@~/Nextcloud/Documents/slurm_vault.secret"

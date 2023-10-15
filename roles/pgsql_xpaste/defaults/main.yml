@@ -1,0 +1,5 @@
+---
+# defaults file for pgsql-xpaste
+pgsql_xpaste_pgsql_user: xpaste
+pgsql_xpaste_pgsql_pass: xpaste
+pgsql_xpaste_database: xpaste

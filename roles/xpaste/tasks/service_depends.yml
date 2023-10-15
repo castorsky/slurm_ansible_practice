@@ -1,0 +1,25 @@
+- name: Install the 'Development tools' package group
+  ansible.builtin.yum:
+    name: "@Development tools"
+    state: present
+
+- name: Install additional development libraries and tools
+  ansible.builtin.yum:
+    name:
+      - libxml2-devel
+      - libxslt-devel
+      - postgresql-devel
+      - git
+    state: present
+
+- name: Install specified Ruby version
+  ansible.builtin.import_role:
+    name: geerlingguy.ruby
+  vars:
+    ruby_version: "{{ xpaste_ruby_version }}"
+    ruby_download_url: "{{ xpaste_ruby_url }}"
+    ruby_install_from_source: true
+
+- name: Install NodeJS (default role version)
+  ansible.builtin.import_role:
+    name: geerlingguy.nodejs

@@ -1,0 +1,63 @@
+---
+# defaults file for xpaste
+xpaste_git_repo_url_scheme: https
+xpaste_git_repo_url_base: gitlab.slurm.io/edu/xpaste_practicum.git
+xpaste_git_repo_user: git_puller
+xpaste_git_repo_password: !vault |
+          $ANSIBLE_VAULT;1.2;AES256;slurm
+          36643465643637383264333664373038353961333633353531356431323365663135616462336566
+          3033613464303138386237333136333434386462366463370a666235376337336463623065363864
+          30383165656463653132646636313035626265366637656233636239376132663764646338333662
+          6461333437643062660a306564336637313133333935666630613435333035663535333363396635
+          63393530313634623633636463616230616363303035626634636365313135383136
+xpaste_ruby_version: 2.6.10
+xpaste_ruby_url: "http://cache.ruby-lang.org/pub/ruby/{{ xpaste_ruby_version.split('.')[:2] | join('.') }}/ruby-{{ xpaste_ruby_version }}.tar.gz"
+xpaste_www_root: /var/www
+xpaste_root_dir: "{{ xpaste_www_root }}/xpaste-release"
+xpaste_database_name: xpaste
+xpaste_database_user: xpaste
+xpaste_database_pass: xpaste
+xpaste_database_host: 127.0.0.1
+xpaste_service_secret_key: Y2gE0oHauIwqrSjq8u4jj5xFkJiHgmCxP8AOOT
+xpaste_service_rails_env: production
+xpaste_service_socket: /var/run/puma.sock
+xpaste_nginx_default_site:
+  - backup: true
+    template_file: http/default.conf.j2
+    deployment_location: /etc/nginx/conf.d/default_site.conf
+    config:
+      upstreams:
+        - name: southbridge
+          zone:
+            name: south_mem_zone
+            size: 64k
+          servers:
+            - address: unix:{{ xpaste_service_socket }}
+              fail_timeout: 0
+      servers:
+        - core:
+            listen:
+              - port: 80
+                address: 0.0.0.0
+                default_server: true
+                ssl: false
+          log:
+            access:
+              - path: /var/log/nginx/access.log
+          locations:
+            - location: /
+              proxy:
+                pass: http://southbridge
+                set_header:
+                  - field: Host
+                    value: $host
+                  - field: X-Forwarded-For
+                    value: $proxy_add_x_forwarded_for
+                  - field: Proxy
+                    value: "\"\""
+                buffer_size: 16k
+                buffers:
+                  number: 32
+                  size: 16k
+                read_timeout: 300
+                redirect: false

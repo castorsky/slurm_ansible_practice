@@ -1,0 +1,50 @@
+- name: Prepare /var/www directory where service files will be placed
+  ansible.builtin.file:
+    path: "{{ xpaste_www_root }}"
+    state: directory
+    owner: root
+    mode: "0775"
+
+- name: Pull Git repository with Xpaste sources
+  ansible.builtin.git:
+    repo: "{{ xpaste_git_repo_url_scheme }}://{{ xpaste_git_repo_user }}:{{ xpaste_git_repo_password }}@{{ xpaste_git_repo_url_base }}"
+    dest: "{{ xpaste_root_dir }}"
+    version: master
+    single_branch: true
+
+- name: Set config options for nokogiri gem
+  ansible.builtin.command:
+    cmd: "{{ xpaste_root_dir }}/bin/bundle config build.nokogiri --use-system-libraries"
+    creates: /root/.bundle/config
+
+- name: Install Xpaste gem dependencies
+  ansible.builtin.command:
+    cmd: "{{ xpaste_root_dir }}/bin/bundle install --clean --no-cache --without development"
+  register: result
+  failed_when: >
+    result.rc not in [0, 15]
+  changed_when: >
+    "Installing " in result.stdout
+
+- name: Create unit file for Xpaste service
+  ansible.builtin.template:
+    dest: /etc/systemd/system/xpaste.service
+    src: xpaste.service.j2
+    owner: root
+    mode: "0644"
+  notify: Xpaste restart
+
+- name: Copy environment file to /etc/sysconfig
+  ansible.builtin.template:
+    dest: /etc/sysconfig/xpaste
+    src: xpaste.environment.j2
+    owner: root
+    mode: "0644"
+  notify: Xpaste restart
+
+- name: Enable and fire up Xpaste service
+  ansible.builtin.systemd_service:
+    name: xpaste.service
+    daemon_reload: true
+    enabled: true
+  notify: Xpaste restart

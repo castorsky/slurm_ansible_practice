@@ -1,0 +1,14 @@
+[Unit]
+Description=Xpaste - another online pastebin service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory={{ xpaste_root_dir }}
+EnvironmentFile=/etc/sysconfig/xpaste
+ExecStartPre={{ xpaste_root_dir }}/bin/bundle exec rake db:migrate
+ExecStart={{ xpaste_root_dir }}/bin/bundle exec puma -b unix://{{ xpaste_service_socket }} -e $RAILS_ENV config.ru
+
+[Install]
+WantedBy=multi-user.target
