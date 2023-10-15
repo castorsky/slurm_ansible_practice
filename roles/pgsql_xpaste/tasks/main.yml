@@ -1,0 +1,57 @@
+---
+# tasks file for pgsql-xpaste
+- name: Install PostgreSQL package and python2 deps from system repo
+  ansible.builtin.package:
+    name:
+      - postgresql-server
+      - python-psycopg2
+      - python-ipaddress
+    state: present
+
+- name: Check if PostgreSQL database is initialized
+  ansible.builtin.stat:
+    path: "/var/lib/pgsql/data/PG_VERSION"
+  register: pgdata_dir_version
+
+- name: Ensure PostgreSQL database is initialized
+  ansible.builtin.command:
+     cmd: /bin/postgresql-setup initdb
+  when: not pgdata_dir_version.stat.exists
+  become: true
+  become_user: postgres
+  vars:
+    ansible_ssh_pipelining: true
+
+- name: Enable and start server
+  ansible.builtin.service:
+    name: postgresql
+    state: started
+    enabled: true
+
+- name: Create additional user
+  become_user: postgres
+  vars:
+    ansible_ssh_pipelining: true
+  community.postgresql.postgresql_user:
+    name: "{{ pgsql_xpaste_pgsql_user }}"
+    password: "{{ pgsql_xpaste_pgsql_pass }}"
+    state: present
+
+- name: Create database
+  become_user: postgres
+  vars:
+    ansible_ssh_pipelining: true
+  community.postgresql.postgresql_db:
+    name: "{{ pgsql_xpaste_database }}"
+    owner: "{{ pgsql_xpaste_pgsql_user }}"
+    state: present
+
+- name: Allow TCP connection for new user
+  community.postgresql.postgresql_pg_hba:
+    dest: /var/lib/pgsql/data/pg_hba.conf
+    databases: "{{ pgsql_xpaste_database }}"
+    users: "{{ pgsql_xpaste_pgsql_user }}"
+    method: md5
+    contype: host
+    source: 127.0.0.1
+  notify: Xpaste | Restart postgresql-server

@@ -1,0 +1,12 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: vagrant
+  provider:
+    name: virtualbox
+platforms:
+  - name: centos-pgsql
+    box: bento/centos-7.9
+    instance_raw_config_args:
+      - 'vbguest.auto_update = false'

@@ -1,0 +1,6 @@
+---
+# handlers file for xpaste
+- name: Xpaste restart
+  ansible.builtin.systemd_service:
+    name: xpaste.service
+    state: restarted

@@ -1,0 +1,27 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+  gather_subset:
+    - min
+  tasks:
+    - name: Gather info about system services
+      ansible.builtin.service_facts:
+
+    - name: Connect to database and try execute some statement
+      community.postgresql.postgresql_query:
+        db: xpaste
+        login_host: 127.0.0.1
+        login_user: xpaste
+        login_password: xpaste
+        query: "SELECT * FROM pg_catalog.pg_database WHERE datname='xpaste';"
+      register: verify_sql_query
+      ignore_errors: true
+
+    - name: Verify statements
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.services['postgresql.service']['status'] == 'enabled'
+          - ansible_facts.services['postgresql.service']['state'] == 'running'
+          - not verify_sql_query.failed and verify_sql_query.query_result | length > 0

@@ -1,0 +1,6 @@
+---
+# handlers file for pgsql-xpaste
+- name: Xpaste | Restart postgresql-server
+  ansible.builtin.service:
+    name: postgresql
+    state: restarted

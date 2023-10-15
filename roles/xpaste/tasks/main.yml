@@ -1,0 +1,29 @@
+---
+# tasks file for xpaste
+- name: Install PostgreSQL and create user with database
+  ansible.builtin.import_role:
+    name: pgsql_xpaste
+  vars:
+    pgsql_xpaste_pgsql_user: "{{ xpaste_database_user }}"
+    pgsql_xpaste_pgsql_pass: "{{ xpaste_database_pass }}"
+    pgsql_xpaste_database: "{{ xpaste_database_name }}"
+
+- name: Install NGINX package with default parameters
+  ansible.builtin.import_role:
+    name: nginxinc.nginx
+
+- name: Configure NGINX as load balancer for Xpaste service
+  ansible.builtin.import_role:
+    name: nginxinc.nginx_config
+  vars:
+    nginx_config_main_template_enable: true
+    nginx_config_http_template_enable: true
+    nginx_config_http_template: "{{ xpaste_nginx_default_site }}"
+
+- name: Install dependencies (Ruby and NodeJS)
+  ansible.builtin.import_tasks:
+    file: service_depends.yml
+
+- name: Prepare service environment, configure and start it
+  ansible.builtin.import_tasks:
+    file: service_environment.yml

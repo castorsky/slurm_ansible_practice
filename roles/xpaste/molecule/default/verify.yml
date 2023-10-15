@@ -1,0 +1,30 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+  gather_subset:
+    - min
+
+  tasks:
+    - name: Gather info about system services
+      ansible.builtin.service_facts:
+
+    - name: Get web page provided by deployed server
+      delegate_to: localhost
+      ansible.builtin.uri:
+        url: http://172.17.17.31/
+        return_content: true
+      register: srv_response
+      ignore_errors: true
+
+    - name: Verify statements
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.services['postgresql.service']['status'] == 'enabled'
+          - ansible_facts.services['postgresql.service']['state'] == 'running'
+          - ansible_facts.services['nginx.service']['status'] == 'enabled'
+          - ansible_facts.services['nginx.service']['state'] == 'running'
+          - ansible_facts.services['xpaste.service']['status'] == 'enabled'
+          - ansible_facts.services['xpaste.service']['state'] == 'running'
+          - not srv_response.failed and srv_response.content is regex(".*\<title\>xPaste\<\/title\>.*")

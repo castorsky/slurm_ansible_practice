@@ -1,0 +1,9 @@
+---
+- name: Deploy Xpaste server with all defaults
+  hosts: all
+  become: true
+  gather_facts: true
+  gather_subset:
+    - min
+  roles:
+    - xpaste
